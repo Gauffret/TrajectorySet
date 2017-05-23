@@ -18,7 +18,7 @@ start = time.time()
 
 folders = glob.glob("/home/gwladys/Videos/UCF50/*")
 for Vfolder in folders:
-    foldername = Vfolder[27:] #You keep inly the name of the last folder
+    foldername = Vfolder[27:] #You keep only the name of the last folder
     files = glob.glob(Vfolder + "/*.avi")
     elapsed_time = time.time() - start
     print ("elapsed_time_{0}:{1}".format(foldername,elapsed_time)) + "[sec]"
@@ -26,7 +26,8 @@ for Vfolder in folders:
         name = F.split("/")
         filename = name[6]
         filename = filename[:-4]
-        print(filename)
-        #commands.getoutput("mkdir ../result/%s " %(foldername))
+        print("../release/DenseTrackStab %s ../result/%s/%s.txt \
+        " %(F,foldername,filename))
+        commands.getoutput("mkdir ../result/%s " %(foldername))
         commands.getoutput("../release/DenseTrackStab %s ../result/%s/%s.txt \
         " %(F,foldername,filename))

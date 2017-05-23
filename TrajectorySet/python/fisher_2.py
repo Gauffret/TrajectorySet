@@ -1,10 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Wed Nov  9 16:06:40 2016
-
-@author: matsui
-"""
-
 #Author: Jacob Gildenblat, 2014
 #License: you may use this for whatever you like 
 import sys, glob, argparse
@@ -19,13 +12,16 @@ from sklearn import svm
 from sklearn.grid_search import GridSearchCV
 from sklearn.metrics import classification_report, confusion_matrix
 
+
 def dictionary(descriptors, N):
+    print("dictionary")
     em = cv2.EM(N)
     print("cv2")
     em.train(descriptors)
     print("em")
     return np.float32(em.getMat("means")), \
-    	np.float32(em.getMatVector("covs")), np.float32(em.getMat("weights"))[0]
+		np.float32(em.getMatVector("covs")), np.float32(em.getMat("weights"))[0]
+
 
 def image_descriptors(file):
     print(file)
@@ -33,12 +29,13 @@ def image_descriptors(file):
     descriptors = descriptors.reshape((-1,750)) #3*3=9 9*30=270
 
     return descriptors
-    
+
+ 
 def folder_descriptors(folder):
     print(folder)
     files = glob.glob(folder + "/*.txt")
-    
-    print("Calculating descriptors. Number of images is", len(files))       
+
+    print("Calculating descriptos. Number of images is", len(files))       
     all_random_feature = np.zeros([1,750],dtype="f4")
     for file in files:
         file_feature = image_descriptors(file) 
@@ -59,7 +56,7 @@ def likelihood_statistics(samples, means, covs, weights):
 	samples = zip(range(0, len(samples)), samples)
 	
 	g = [multivariate_normal(mean=means[k], cov=covs[k]) for k in range(0, len(weights)) ]
-  
+
 	for index, x in samples:
 		gaussians[index] = np.array([g_k.pdf(x) for g_k in g])     
 		gaussians[index][(gaussians[index])>10000000] = 10000000
@@ -111,7 +108,6 @@ def generate_gmm(input_folder, N):
     covs = np.float32([m for k,m in zip(range(0, len(weights)), covs) if weights[k] > th])
     weights = np.float32([m for k,m in zip(range(0, len(weights)), weights) if weights[k] > th])
     print("before_threshold")
-
     for i in range(0, len(weights)):
          diag = np.diag(covs[i])
          diag_s = diag.copy()
@@ -120,14 +116,12 @@ def generate_gmm(input_folder, N):
              zis = [j for j, x in enumerate(diag) if x == diag_s[0]]
              for zi in zis:
                  covs[i,zi,zi] = 0.00001
-
-    np.save("../result/101means.gmm", means)
-    np.save("../result/101covs.gmm", covs)
-    np.save("../result/101weights.gmm", weights)
+    np.save("../result/means.gmm", means)
+    np.save("../result/covs.gmm", covs)
+    np.save("../result/weights.gmm", weights)
     return means, covs, weights
 
 def get_fisher_vectors_from_folder(folder, gmm):
-
     files = glob.glob(folder + "/*.txt")
     return np.float32([fisher_vector(image_descriptors(file), file, *gmm) for file in files])
 
@@ -135,7 +129,8 @@ def fisher_features(folder, gmm):
 	folders = glob.glob(folder + "/*")
 	features = {f : get_fisher_vectors_from_folder(f, gmm) for f in folders}
 	return features
- 
+
+
 def train(train,group):
 	X = np.concatenate(train.values())
 	Y = np.concatenate([np.float32([i]*len(v)) for i,v in zip(range(0, len(train)), train.values())])
@@ -163,7 +158,7 @@ def train(train,group):
 	#print classification_report(Y,Y_sum)
 
 	return res
-
+	
 def load_gmm(folder = ""):
 	files = ["means.gmm.npy", "covs.gmm.npy", "weights.gmm.npy"]
 	return map(lambda file: np.load(file), map(lambda s : folder + "/" + s , files))
@@ -174,15 +169,30 @@ def get_args():
     parser.add_argument('-n' , "--number", help="Number of words in dictionary" , default=5, type=int)
     args = parser.parse_args()
     return args
-    
+  
+#Main
 
-# Main
 start = time.time()
 
 args = get_args()
 path = '/home/matsui/improved_trajectory_release/'
-gmm_path ='../result'
+gmm_path ='../result/'
 
-gmm = load_gmm(path+"no-normal_gmm") if args.loadgmm else generate_gmm(gmm_path, args.number)
+gmm = load_gmm(path+"101gmm") if args.loadgmm else generate_gmm(gmm_path, args.number)
+
+
 elapsed_time = time.time() - start
 print ("elapsed_time_gmm:{0}".format(elapsed_time)) + "[sec]"
+
+group = []
+
+fisher_features = fisher_features(gmm_path, gmm)
+#
+elapsed_time = time.time() - start
+print ("elapsed_time_fisher:{0}".format(elapsed_time)) + "[sec]"
+"""
+with open('../101fisher/fisher_dict0.pickle','wb') as f:
+    pickle.dump(fisher_features,f)
+with open('../101fisher/fisher_group0.txt','wb') as f:
+    f.write("\n".join(map(lambda x: str(x), group)) + "\n")
+"""
