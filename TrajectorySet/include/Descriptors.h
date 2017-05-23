@@ -1,3 +1,14 @@
+/*
+* @INPROCEEDINGS{Wang2013,
+* 	author={Heng Wang and Cordelia Schmid},
+* 	title={Action Recognition with Improved Trajectories},
+* 	booktitle= {IEEE International Conference on Computer Vision},
+* 	year={2013},
+* 	address={Sydney, Australia},
+* 	url={http://hal.inria.fr/hal-00873267}
+* }
+*/
+
 #ifndef DESCRIPTORS_H_
 #define DESCRIPTORS_H_
 

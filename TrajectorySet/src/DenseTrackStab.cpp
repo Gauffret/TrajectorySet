@@ -1,3 +1,14 @@
+/*
+* @INPROCEEDINGS{Wang2013,
+* 	author={Heng Wang and Cordelia Schmid},
+* 	title={Action Recognition with Improved Trajectories},
+* 	booktitle= {IEEE International Conference on Computer Vision},
+* 	year={2013},
+* 	address={Sydney, Australia},
+* 	url={http://hal.inria.fr/hal-00873267}
+* }
+*/
+
 #include "../include/DenseTrackStab.h"
 #include "../include/Initialize.h"
 #include "../include/Descriptors.h"

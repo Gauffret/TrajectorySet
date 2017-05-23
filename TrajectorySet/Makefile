@@ -1,3 +1,11 @@
+# ------------------------------------------------
+# Makefile
+#
+# Author: Kenji Matsui
+# Date  : 2017-04-10
+#
+# ------------------------------------------------
+
 # set the binaries that have to be built
 TARGETS := DenseTrackStab Video
 

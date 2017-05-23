@@ -74,7 +74,7 @@ $(BUILDDIR) $(BINDIR):
 $(BUILDDIR)/%.d: %.cpp
 	@echo "=== creating dependency file: $@ ==="
 	@test -e $(dir $@) || mkdir -p $(dir $@)
-	g++ $(CXXFLAGS) -MM -MT $(BUILDDIR)/$*.o -MT $(BUILDDIR)/$*.d -MF $@ src/$<
+	g++ $(CXXFLAGS) -MM -MT $(BUILDDIR)/$*.o -MT $(BUILDDIR)/$*.d -MF $@ $<
 
 # dependencies for the linking
 %.so.l %.l: %.d
