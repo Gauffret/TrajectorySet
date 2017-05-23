@@ -1,7 +1,7 @@
-#include "DenseTrackStab.h"
-#include "Initialize.h"
-#include "Descriptors.h"
-#include "OpticalFlow.h"
+#include "../include/DenseTrackStab.h"
+#include "../include/Initialize.h"
+#include "../include/Descriptors.h"
+#include "../include/OpticalFlow.h"
 #include <iostream>
 #include <fstream>
 
