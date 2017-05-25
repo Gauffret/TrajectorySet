@@ -137,10 +137,11 @@ def fisher_features(folder, gmm):
 	return features
  
 def train(train,group):
-	X = np.concatenate(train.values())
-	Y = np.concatenate([np.float32([i]*len(v)) for i,v in zip(range(0, len(train)), train.values())])
-	Y_sum = np.zeros([len(Y)])   
-	for g_number in len(25):
+    print("test")
+    X = np.concatenate(train.values())
+    Y = np.concatenate([np.float32([i]*len(v)) for i,v in zip(range(0, len(train)), train.values())])
+    Y_sum = np.zeros([len(Y)])   
+    for g_number in len(25):
          X_train = np.zeros([1,len(X[0])]) 
          X_test = np.zeros([1,len(X[0])]) 
          Y_train = np.zeros(1) 
@@ -160,9 +161,9 @@ def train(train,group):
              res = float(sum([a==b for a,b in zip(clf.predict(X_test), Y_test)])) / len(Y)                  
              Y_sum[test_index] = a
 
-	#print classification_report(Y,Y_sum)
+    print classification_report(Y,Y_sum)
 
-	return res
+    return res
 
 def load_gmm(folder = ""):
 	files = ["means.gmm.npy", "covs.gmm.npy", "weights.gmm.npy"]
@@ -181,7 +182,7 @@ start = time.time()
 
 args = get_args()
 path = '/home/matsui/improved_trajectory_release/'
-gmm_path ='../result'
+gmm_path ='/media/gwladys/36A831ACA8316C0D/result'
 
 gmm = load_gmm(path+"no-normal_gmm") if args.loadgmm else generate_gmm(gmm_path, args.number)
 elapsed_time = time.time() - start

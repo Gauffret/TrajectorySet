@@ -28,6 +28,6 @@ for Vfolder in folders:
         filename = filename[:-4]
         print("../release/DenseTrackStab %s ../result/%s/%s.txt \
         " %(F,foldername,filename))
-        commands.getoutput("mkdir ../result/%s " %(foldername))
+        #commands.getoutput("mkdir ../result/%s " %(foldername))
         commands.getoutput("../release/DenseTrackStab %s ../result/%s/%s.txt \
         " %(F,foldername,filename))

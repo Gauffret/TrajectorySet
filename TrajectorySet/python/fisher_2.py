@@ -132,32 +132,36 @@ def fisher_features(folder, gmm):
 
 
 def train(train,group):
-	X = np.concatenate(train.values())
-	Y = np.concatenate([np.float32([i]*len(v)) for i,v in zip(range(0, len(train)), train.values())])
-	Y_sum = np.zeros([len(Y)])   
-	for g_number in len(25):
-         X_train = np.zeros([1,len(X[0])]) 
-         X_test = np.zeros([1,len(X[0])]) 
-         Y_train = np.zeros(1) 
-         Y_test = np.zeros(1) 
-         for index in len(group):
-             if group(index) == g_number+1 :
-                 X_test = np.concatenate([X_test,X[index:index+1, :]])
-                 Y_test = np.concatenate([Y_test,[Y[index]]])
-            
-             else:
-                 X_train = np.concatenate([X_train,X[index:index+1, :]])
-                 Y_train = np.concatenate([Y_train,[Y[index]]])
-                 
-             clf = svm.SVC(kernel='rbf', gamma =0.1,C = 1000)
-             clf.fit(X_train,Y_train)
-                 
-             res = float(sum([a==b for a,b in zip(clf.predict(X_test), Y_test)])) / len(Y)                  
-             Y_sum[test_index] = a
+    print("train")
+    X = np.concatenate(train.values())
+    print("sncf")
+    Y = np.concatenate([np.float32([i]*len(v)) for i,v in zip(range(0, len(train)), train.values())])
+    Y_sum = np.zeros([len(Y)])
+    print("tchoutchou")
+    for g_number in len(25):
+        X_train = np.zeros([1,len(X[0])]) 
+        X_test = np.zeros([1,len(X[0])]) 
+        Y_train = np.zeros(1) 
+        Y_test = np.zeros(1) 
+        for index in len(group):
+            print(len(group))
+            if group(index) == g_number+1 :
+                X_test = np.concatenate([X_test,X[index:index+1, :]])
+                Y_test = np.concatenate([Y_test,[Y[index]]])
 
-	#print classification_report(Y,Y_sum)
+            else:
+                X_train = np.concatenate([X_train,X[index:index+1, :]])
+                Y_train = np.concatenate([Y_train,[Y[index]]])
+             
+            clf = svm.SVC(kernel='rbf', gamma =0.1,C = 1000)
+            clf.fit(X_train,Y_train)
+             
+            res = float(sum([a==b for a,b in zip(clf.predict(X_test), Y_test)])) / len(Y)                  
+            Y_sum[test_index] = a
 
-	return res
+    print classification_report(Y,Y_sum)
+
+    return res
 	
 def load_gmm(folder = ""):
 	files = ["means.gmm.npy", "covs.gmm.npy", "weights.gmm.npy"]
@@ -175,10 +179,10 @@ def get_args():
 start = time.time()
 
 args = get_args()
-path = '/home/matsui/improved_trajectory_release/'
-gmm_path ='../result/'
+path = '../result'
+gmm_path ='/media/gwladys/36A831ACA8316C0D/result'
 
-gmm = load_gmm(path+"101gmm") if args.loadgmm else generate_gmm(gmm_path, args.number)
+gmm = load_gmm(path) if args.loadgmm else generate_gmm(gmm_path, args.number)
 
 
 elapsed_time = time.time() - start
@@ -190,9 +194,8 @@ fisher_features = fisher_features(gmm_path, gmm)
 #
 elapsed_time = time.time() - start
 print ("elapsed_time_fisher:{0}".format(elapsed_time)) + "[sec]"
-"""
-with open('../101fisher/fisher_dict0.pickle','wb') as f:
+
+with open('../result/fisher_dict0.pickle','wb') as f:
     pickle.dump(fisher_features,f)
-with open('../101fisher/fisher_group0.txt','wb') as f:
+with open('../result/fisher_group0.txt','wb') as f:
     f.write("\n".join(map(lambda x: str(x), group)) + "\n")
-"""

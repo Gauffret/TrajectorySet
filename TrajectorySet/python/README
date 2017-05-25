@@ -1,0 +1,18 @@
+How using the files ?
+
+The file exe.py will extract informations from videos .avi and store it in a file
+.txt. As they are heavy, use a disk with a lot of free space.
+Put line 19 the path from your video's folder.
+Put line 31&32 the path of where you want to store the .txt files.
+
+
+The file gmm_only.py apply the Gaussian Mixture Model on the files .txt.
+It creates 3 gmm.npy files (means, covs and weights) in the result folder.
+The variable path contains the path of previous gmm classification.
+The variable gmm_path contains the path of the gmm classification you will made.
+Call with option -g, this python programm will use the previous classification.
+Call with option -n X, it will classified videos in X differents categories.
+
+
+The file fisher_2.py use the same algorithm as gmm_only.py at the beginning.
+Then it applies the fisher vectors on the files .txt.
