@@ -16,3 +16,10 @@ Call with option -n X, it will classified videos in X differents categories.
 
 The file fisher_2.py use the same algorithm as gmm_only.py at the beginning.
 Then it applies the fisher vectors on the files .txt.
+
+
+The file plot_gmm.py show and save the point calculated in the file means.gmm.npy
+created by gmm_only.py or fisher_2.py when you don't use the option -g.
+
+
+The file 20161114_50class.py needs the files .pickle created by fischer_2.py

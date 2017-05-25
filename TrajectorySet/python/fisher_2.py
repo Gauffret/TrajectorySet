@@ -26,7 +26,7 @@ def dictionary(descriptors, N):
 def image_descriptors(file):
     print(file)
     descriptors = np.fromfile(file, dtype='f4')
-    descriptors = descriptors.reshape((-1,750)) #3*3=9 9*30=270
+    descriptors = descriptors.reshape((-1,750)) #3*3=9 9*30=270 / sizeOfLine = 750
 
     return descriptors
 

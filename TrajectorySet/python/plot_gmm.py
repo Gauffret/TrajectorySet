@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 from pylab import *
 import numpy as np
 
-path = "/home/matsui/track/3gmm/means.gmm.npy"
+path = "../result/means.gmm.npy"
 means = np.load(path)
 
 cellsize = 10
@@ -30,5 +30,5 @@ for l in range(0,coll):
     plt.grid()    
     plt.xlim([0,55])
     plt.ylim([0,55]) 
-    plt.savefig("../plot/means%d.pdf"%l) 
+    plt.savefig("../result/plot/means%d.pdf"%l) 
     plt.show()
