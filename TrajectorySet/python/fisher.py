@@ -25,7 +25,7 @@ def dictionary(descriptors, N):
 
 
 def image_descriptors(file):
-    print(file)
+    #print(file)
     descriptors = np.fromfile(file, dtype='f4')
     descriptors = descriptors.reshape((-1,750)) #3*3=9 9*30=270 / sizeOfLine = 750
 
@@ -36,7 +36,7 @@ def folder_descriptors(folder):
     print(folder)
     files = glob.glob(folder + "/*.txt")
 
-    print("Calculating descriptos. Number of images is", len(files))       
+    print("Calculating descriptors. Number of images is", len(files))       
     all_random_feature = np.zeros([1,750],dtype="f4")
     for file in files:
         file_feature = image_descriptors(file) 
@@ -99,8 +99,24 @@ def fisher_vector(samples,file_name, means, covs, w):
 	fv = normalize(fv)
 	return fv
 
+def wordsList(folders, nbProc):
+    words = []
+    for i in range(nbProc):
+        pid = os.fork()
+        if(pid==0):
+            for folder in folders[i*len(folders)/nbProc:(i+1)*len(folders)/nbProc-1]:
+                words= np.concatenate[words,folder_descriptors(folder)]
+            os._exit(0)
+        else :
+            continue
+
+    for i in range(nbProc):
+        os.wait()
+    return words
+
 def generate_gmm(input_folder, N):
-    words = np.concatenate([folder_descriptors(folder) for folder in glob.glob(input_folder + '/*')]) 
+    folders = glob.glob(input_folder + '/*')
+    words = wordsList(folders,8)
     
     print("Training GMM of size", N)         
     means, covs, weights = dictionary(words, N)
@@ -118,19 +134,34 @@ def generate_gmm(input_folder, N):
              zis = [j for j, x in enumerate(diag) if x == diag_s[0]]
              for zi in zis:
                  covs[i,zi,zi] = 0.00001
-    np.save("../result/means.gmm", means)
-    np.save("../result/covs.gmm", covs)
-    np.save("../result/weights.gmm", weights)
+    np.save("../result/meansP.gmm", means)
+    np.save("../result/covsP.gmm", covs)
+    np.save("../result/weightsP.gmm", weights)
     return means, covs, weights
 
 def get_fisher_vectors_from_folder(folder, gmm):
     files = glob.glob(folder + "/*.txt")
     return np.float32([fisher_vector(image_descriptors(file), file, *gmm) for file in files])
 
+def featuresMaker(folders, gmm, nbProc):
+    features = []
+    for i in range(nbProc):
+        pid = os.fork()
+        if(pid==0):
+            for folder in folders[i*len(folders)/nbProc:(i+1)*len(folders)/nbProc-1]:
+                features= np.concatenate[features,get_fisher_vectors_from_folder(folder, gmm)]
+            os._exit(0)
+        else :
+            continue
+
+    for i in range(nbProc):
+        os.wait()
+    return features
+
 def fisher_features(folder, gmm):
 	folders = glob.glob(folder + "/*")
     #TODO parallelisation
-	features = {f : get_fisher_vectors_from_folder(f, gmm) for f in folders}
+	features = featuresMaker(folders,gmm,8)
 	return features
 
 
@@ -198,7 +229,7 @@ fisher_features = fisher_features(gmm_path, gmm)
 elapsed_time = time.time() - start
 print ("elapsed_time_fisher:{0}".format(elapsed_time)) + "[sec]"
 
-with open('../result/fisher_dict0.pickle','wb') as f:
+with open('../result/fisher_dictP.pickle','wb') as f:
     pickle.dump(fisher_features,f)
-with open('../result/fisher_group0.txt','wb') as f:
+with open('../result/fisher_groupP.txt','wb') as f:
     f.write("\n".join(map(lambda x: str(x), group)) + "\n")
