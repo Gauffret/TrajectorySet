@@ -21,11 +21,11 @@ def dictionary(descriptors, N):
     em.train(descriptors)
     print("em")
     return np.float32(em.getMat("means")), \
-		np.float32(em.getMatVector("covs")), np.float32(em.getMat("weights"))[0]
+        np.float32(em.getMatVector("covs")), np.float32(em.getMat("weights"))[0]
 
 
 def image_descriptors(file):
-    #print(file)
+    print(file)
     descriptors = np.fromfile(file, dtype='f4')
     descriptors = descriptors.reshape((-1,750)) #3*3=9 9*30=270 / sizeOfLine = 750
 
@@ -36,7 +36,7 @@ def folder_descriptors(folder):
     print(folder)
     files = glob.glob(folder + "/*.txt")
 
-    print("Calculating descriptors. Number of images is", len(files))       
+    print("Calculating descriptos. Number of images is", len(files))       
     all_random_feature = np.zeros([1,750],dtype="f4")
     for file in files:
         file_feature = image_descriptors(file) 
@@ -48,79 +48,63 @@ def folder_descriptors(folder):
             all_random_feature = all_random_feature[1:,:]
     return all_random_feature
 
-def likelihood_moment(x, ytk, moment):	
-	x_moment = np.power(np.float32(x), moment) if moment > 0 else np.float32([1])
-	return x_moment * ytk
+def likelihood_moment(x, ytk, moment):
+    x_moment = np.power(np.float32(x), moment) if moment > 0 else np.float32([1])
+    return x_moment * ytk
 
 def likelihood_statistics(samples, means, covs, weights):
-	gaussians, s0, s1,s2 = {}, {}, {}, {}
-	samples = zip(range(0, len(samples)), samples)
-	
-	g = [multivariate_normal(mean=means[k], cov=covs[k]) for k in range(0, len(weights)) ]
+    gaussians, s0, s1,s2 = {}, {}, {}, {}
+    samples = zip(range(0, len(samples)), samples)
+    
+    g = [multivariate_normal(mean=means[k], cov=covs[k]) for k in range(0, len(weights)) ]
 
-	for index, x in samples:
-		gaussians[index] = np.array([g_k.pdf(x) for g_k in g])     
-		gaussians[index][(gaussians[index])>10000000] = 10000000
-		gaussians[index][(gaussians[index])<0.00000001] = 0.00000001
-	for k in range(0, len(weights)):
-		s0[k], s1[k], s2[k] = 0, 0, 0
-		for index, x in samples:
-			probabilities = np.multiply(gaussians[index], weights)
-			probabilities = probabilities / np.sum(probabilities)      
-			s0[k] = s0[k] + likelihood_moment(x, probabilities[k], 0)
-			s1[k] = s1[k] + likelihood_moment(x, probabilities[k], 1)
-			s2[k] = s2[k] + likelihood_moment(x, probabilities[k], 2)
+    for index, x in samples:
+        gaussians[index] = np.array([g_k.pdf(x) for g_k in g])     
+        gaussians[index][(gaussians[index])>10000000] = 10000000
+        gaussians[index][(gaussians[index])<0.00000001] = 0.00000001
+    for k in range(0, len(weights)):
+        s0[k], s1[k], s2[k] = 0, 0, 0
+        for index, x in samples:
+            probabilities = np.multiply(gaussians[index], weights)
+            probabilities = probabilities / np.sum(probabilities)      
+            s0[k] = s0[k] + likelihood_moment(x, probabilities[k], 0)
+            s1[k] = s1[k] + likelihood_moment(x, probabilities[k], 1)
+            s2[k] = s2[k] + likelihood_moment(x, probabilities[k], 2)
 
-	return s0, s1, s2
+    return s0, s1, s2
 
 def fisher_vector_weights(s0, s1, s2, means, covs, w, T):
-	return np.float32([((s0[k] - T * w[k]) / np.sqrt(w[k]) ) for k in range(0, len(w))])
+    return np.float32([((s0[k] - T * w[k]) / np.sqrt(w[k]) ) for k in range(0, len(w))])
 
 def fisher_vector_means(s0, s1, s2, means, sigma, w, T):
-	return np.float32([(s1[k] - means[k] * s0[k]) / (np.sqrt(w[k] * sigma[k])) for k in range(0, len(w))])
+    return np.float32([(s1[k] - means[k] * s0[k]) / (np.sqrt(w[k] * sigma[k])) for k in range(0, len(w))])
 
 def fisher_vector_sigma(s0, s1, s2, means, sigma, w, T):
-	return np.float32([(s2[k] - 2 * means[k]*s1[k]  + (means[k]*means[k] - sigma[k]) * s0[k]) / (np.sqrt(2*w[k])*sigma[k])  for k in range(0, len(w))])
+    return np.float32([(s2[k] - 2 * means[k]*s1[k]  + (means[k]*means[k] - sigma[k]) * s0[k]) / (np.sqrt(2*w[k])*sigma[k])  for k in range(0, len(w))])
 
 def normalize(fisher_vector):
-	v = np.sqrt(abs(fisher_vector)) * np.sign(fisher_vector)
-	return v / np.sqrt(np.dot(v, v))
+    v = np.sqrt(abs(fisher_vector)) * np.sign(fisher_vector)
+    return v / np.sqrt(np.dot(v, v))
 
 def fisher_vector(samples,file_name, means, covs, w):
-	group.append(int(file_name[-10:-8]))#group divide
+    group.append(int(file_name[-10:-8]))#group divide
         
-	s0, s1, s2 =  likelihood_statistics(samples, means, covs, w)
-	T = samples.shape[0]
-	covs = np.float32([np.diagonal(covs[k]) for k in range(0, covs.shape[0])])
-	a = fisher_vector_weights(s0, s1, s2, means, covs, w, T)
-	b = fisher_vector_means(s0, s1, s2, means, covs, w, T)
-	c = fisher_vector_sigma(s0, s1, s2, means, covs, w, T)
-	fv = np.concatenate([np.concatenate(a), np.concatenate(b), np.concatenate(c)])
-	fv = normalize(fv)
-	return fv
-
-def wordsList(folders, nbProc):
-    words = []
-    for i in range(nbProc):
-        pid = os.fork()
-        if(pid==0):
-            for folder in folders[i*len(folders)/nbProc:(i+1)*len(folders)/nbProc-1]:
-                words= np.concatenate[words,folder_descriptors(folder)]
-            os._exit(0)
-        else :
-            continue
-
-    for i in range(nbProc):
-        os.wait()
-    return words
+    s0, s1, s2 =  likelihood_statistics(samples, means, covs, w)
+    T = samples.shape[0]
+    covs = np.float32([np.diagonal(covs[k]) for k in range(0, covs.shape[0])])
+    a = fisher_vector_weights(s0, s1, s2, means, covs, w, T)
+    b = fisher_vector_means(s0, s1, s2, means, covs, w, T)
+    c = fisher_vector_sigma(s0, s1, s2, means, covs, w, T)
+    fv = np.concatenate([np.concatenate(a), np.concatenate(b), np.concatenate(c)])
+    fv = normalize(fv)
+    return fv
 
 def generate_gmm(input_folder, N):
-    folders = glob.glob(input_folder + '/*')
-    words = wordsList(folders,8)
+    words = np.concatenate([folder_descriptors(folder) for folder in glob.glob(input_folder + '/*')]) 
     
     print("Training GMM of size", N)         
     means, covs, weights = dictionary(words, N)
-	#Throw away gaussians with weights that are too small:
+    #Throw away gaussians with weights that are too small:
     th = 1.0 / N
     means = np.float32([m for k,m in zip(range(0, len(weights)), means) if weights[k] > th])
     covs = np.float32([m for k,m in zip(range(0, len(weights)), covs) if weights[k] > th])
@@ -134,37 +118,22 @@ def generate_gmm(input_folder, N):
              zis = [j for j, x in enumerate(diag) if x == diag_s[0]]
              for zi in zis:
                  covs[i,zi,zi] = 0.00001
-    np.save("../result/meansP.gmm", means)
-    np.save("../result/covsP.gmm", covs)
-    np.save("../result/weightsP.gmm", weights)
+    np.save("../result/means.gmm", means)
+    np.save("../result/covs.gmm", covs)
+    np.save("../result/weights.gmm", weights)
     return means, covs, weights
 
 def get_fisher_vectors_from_folder(folder, gmm):
     files = glob.glob(folder + "/*.txt")
     return np.float32([fisher_vector(image_descriptors(file), file, *gmm) for file in files])
 
-def featuresMaker(folders, gmm, nbProc):
-    features = []
-    for i in range(nbProc):
-        pid = os.fork()
-        if(pid==0):
-            for folder in folders[i*len(folders)/nbProc:(i+1)*len(folders)/nbProc-1]:
-                features= np.concatenate[features,get_fisher_vectors_from_folder(folder, gmm)]
-            os._exit(0)
-        else :
-            continue
-
-    for i in range(nbProc):
-        os.wait()
+def fisher_features(folder, gmm):
+    folders = glob.glob(folder + "/*")
+    #TODO parallelisation
+    features = {f : get_fisher_vectors_from_folder(f, gmm) for f in folders}
     return features
 
-def fisher_features(folder, gmm):
-	folders = glob.glob(folder + "/*")
-    #TODO parallelisation
-	features = featuresMaker(folders,gmm,8)
-	return features
-
-
+"""
 def train(train,group):
     print("train")
     X = np.concatenate(train.values())
@@ -196,10 +165,10 @@ def train(train,group):
     print classification_report(Y,Y_sum)
 
     return res
-	
+"""    
 def load_gmm(folder = ""):
-	files = ["means.gmm.npy", "covs.gmm.npy", "weights.gmm.npy"]
-	return map(lambda file: np.load(file), map(lambda s : folder + "/" + s , files))
+    files = ["means.gmm.npy", "covs.gmm.npy", "weights.gmm.npy"]
+    return map(lambda file: np.load(file), map(lambda s : folder + "/" + s , files))
 
 def get_args():
     parser = argparse.ArgumentParser()
@@ -229,7 +198,7 @@ fisher_features = fisher_features(gmm_path, gmm)
 elapsed_time = time.time() - start
 print ("elapsed_time_fisher:{0}".format(elapsed_time)) + "[sec]"
 
-with open('../result/fisher_dictP.pickle','wb') as f:
+with open('../result/fisher_dict0.pickle','wb') as f:
     pickle.dump(fisher_features,f)
-with open('../result/fisher_groupP.txt','wb') as f:
+with open('../result/fisher_group0.txt','wb') as f:
     f.write("\n".join(map(lambda x: str(x), group)) + "\n")
