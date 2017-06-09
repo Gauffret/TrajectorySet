@@ -28,7 +28,7 @@ def dictionary(descriptors, N):
     	np.float32(em.getMatVector("covs")), np.float32(em.getMat("weights"))[0]
 
 def image_descriptors(file):
-    print(file)
+    #print(file)
     descriptors = np.fromfile(file, dtype='f4')
     descriptors = descriptors.reshape((-1,750)) #3*3=9 9*30=270
 
@@ -103,6 +103,7 @@ def fisher_vector(samples,file_name, means, covs, w):
 
 def generate_gmm(input_folder, N):
     words = np.concatenate([folder_descriptors(folder) for folder in glob.glob(input_folder + '/*')]) 
+    print(words)
     print("Training GMM of size", N)         
     means, covs, weights = dictionary(words, N)
 	#Throw away gaussians with weights that are too small:
@@ -182,7 +183,7 @@ start = time.time()
 
 args = get_args()
 path = '/home/matsui/improved_trajectory_release/'
-gmm_path ='/media/gwladys/36A831ACA8316C0D/result'
+gmm_path ='/media/gwladys/36A831ACA8316C0D/Exp1'
 
 gmm = load_gmm(path+"no-normal_gmm") if args.loadgmm else generate_gmm(gmm_path, args.number)
 elapsed_time = time.time() - start

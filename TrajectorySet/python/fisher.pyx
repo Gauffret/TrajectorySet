@@ -13,8 +13,12 @@ from sklearn.grid_search import GridSearchCV
 from sklearn.metrics import classification_report, confusion_matrix
 import os
 
+import cython
+from cython.parallel import parallel,prange
+cimport numpy as np
 
-def dictionary(descriptors, N):
+
+def dictionary(descriptors, int N):
     print("dictionary")
     em = cv2.EM(N)
     print("cv2")
@@ -24,7 +28,7 @@ def dictionary(descriptors, N):
         np.float32(em.getMatVector("covs")), np.float32(em.getMat("weights"))[0]
 
 
-def image_descriptors(file):
+def image_descriptors(char * file):
     print(file)
     descriptors = np.fromfile(file, dtype='f4')
     descriptors = descriptors.reshape((-1,750)) #3*3=9 9*30=270 / sizeOfLine = 750
@@ -32,9 +36,9 @@ def image_descriptors(file):
     return descriptors
 
  
-def folder_descriptors(folder):
+def folder_descriptors(char * folder):
     print(folder)
-    files = glob.glob(folder + "/*.txt")
+    files = glob.glob(folder + "/*g01*.txt")
 
     print("Calculating descriptors. Number of images is", len(files))       
     all_random_feature = np.zeros([1,750],dtype="f4")
@@ -99,8 +103,21 @@ def fisher_vector(samples,file_name, group, means, covs, w):
     fv = normalize(fv)
     return fv
 
-def generate_gmm(input_folder, N):
-    words = np.concatenate([folder_descriptors(folder) for folder in glob.glob(input_folder + '/*')]) 
+def getWords(char * input_folder, int nbThread):
+    words = []
+    folders = glob.glob(input_folder + '/*')
+    cdef int size = len(folders)
+    cdef int i
+    with  nogil,parallel(num_threads=nbThread):
+        for i in prange(size, schedule='static' ):
+            with gil:
+                words.append(folder_descriptors(folders[i]))
+    return words
+
+
+
+def generate_gmm(char * input_folder, int N, int nbThread):
+    words = np.concatenate(getWords(input_folder, nbThread)) 
     
     print("Training GMM of size", N)         
     means, covs, weights = dictionary(words, N)
@@ -118,25 +135,33 @@ def generate_gmm(input_folder, N):
              zis = [j for j, x in enumerate(diag) if x == diag_s[0]]
              for zi in zis:
                  covs[i,zi,zi] = 0.00001
-    np.save("../result/means.gmm", means)
-    np.save("../result/covs.gmm", covs)
-    np.save("../result/weights.gmm", weights)
+    np.save("../result/Tmeans.gmm", means)
+    np.save("../result/Tcovs.gmm", covs)
+    np.save("../result/Tweights.gmm", weights)
     return means, covs, weights
 
-def get_fisher_vectors_from_folder(folder, gmm, group):
-    files = glob.glob(folder + "/*.txt")
+def get_fisher_vectors_from_folder(char * folder, gmm, group):
+    files = glob.glob(folder + "/*g01*.txt")
     return np.float32([fisher_vector(image_descriptors(file), file, group, *gmm) for file in files])
 
-def fisher_features(folder, group, gmm):
+def getFeatures(char * folder, int nbThread, group, gmm):
+    features = {}
     folders = glob.glob(folder + "/*")
-    #TODO parallelisation
-    features = {f : get_fisher_vectors_from_folder(f, gmm, group) for f in folders}
+    cdef int size = len(folders)
+    cdef int i
+    with  nogil,parallel(num_threads=nbThread):
+        for i in prange(size, schedule='static' ):
+            with gil:
+                features[folders[i]] = get_fisher_vectors_from_folder(folders[i], gmm, group)
+    return features
+
+def fisher_features(char * folder, int nbThread, group, gmm):
+
+    features = getFeatures(folder, nbThread, group, gmm)
     return features
 
 def train(train,group):
-    print("train")
     X = np.concatenate(train.values())
-    print("sncf")
     Y = np.concatenate([np.float32([i]*len(v)) for i,v in zip(range(0, len(train)), train.values())])
     Y_sum = np.zeros([len(Y)])
     print("tchoutchou")
@@ -165,39 +190,40 @@ def train(train,group):
 
     return res
   
-def load_gmm(folder = ""):
+def load_gmm(char * folder = ""):
     files = ["means.gmm.npy", "covs.gmm.npy", "weights.gmm.npy"]
     return map(lambda file: np.load(file), map(lambda s : folder + "/" + s , files))
 
 def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("-g" , "--loadgmm" , help="Load Gmm dictionary", action = 'store_true', default = False)
-    parser.add_argument('-n' , "--number", help="Number of words in dictionary" , default=49, type=int)
+    parser.add_argument('-n' , "--number", help="Number of words in dictionary" , default=10, type=int)
+    parser.add_argument('-t' , "--nbThread", help="Number of thread in parallelization" , default=15, type=int)
     args = parser.parse_args()
     return args
   
 #Main
 def main():
-    start = time.time()
+    cdef float start = time.time()
 
     args = get_args()
-    path = '../result'
-    gmm_path ='/media/gwladys/36A831ACA8316C0D/result'
+    cdef char * path = '../result'
+    cdef char * gmm_path ='/media/gwladys/36A831ACA8316C0D/result'
 
-    gmm = load_gmm(path) if args.loadgmm else generate_gmm(gmm_path, args.number)
+    gmm = load_gmm(path) if args.loadgmm else generate_gmm(gmm_path, args.number, args.nbThread)
 
 
-    elapsed_time = time.time() - start
+    cdef float elapsed_time = time.time() - start
     print ("elapsed_time_gmm:{0}".format(elapsed_time)) + "[sec]"
 
     group = []
 
-    fisher_feature = fisher_features(gmm_path, group, gmm)
+    fisher_feature = fisher_features(gmm_path, args.nbThread, group, gmm)
     #
     elapsed_time = time.time() - start
     print ("elapsed_time_fisher:{0}".format(elapsed_time)) + "[sec]"
 
-    with open('../result/fisher_dict0.pickle','wb') as f:
+    with open('../result/Tfisher_dict0.pickle','wb') as f:
         pickle.dump(fisher_feature,f)
-    with open('../result/fisher_group0.txt','wb') as f:
+    with open('../result/Tfisher_group0.txt','wb') as f:
         f.write("\n".join(map(lambda x: str(x), group)) + "\n")
