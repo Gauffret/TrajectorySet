@@ -19,6 +19,12 @@ cimport numpy as np
 
 
 def dictionary(descriptors, int N):
+    """
+       dictionary(descriptors, int N)
+
+       Create a dictionnary of size N with the descriptors given.
+       Using OpenCV.
+    """
     print("dictionary")
     em = cv2.EM(N)
     print("cv2")
@@ -29,6 +35,11 @@ def dictionary(descriptors, int N):
 
 
 def image_descriptors(char * file):
+    """
+        image_descriptors(char * file)
+
+        Return descriptors of the given file.
+    """
     print(file)
     descriptors = np.fromfile(file, dtype='f4')
     descriptors = descriptors.reshape((-1,750)) #3*3=9 9*30=270 / sizeOfLine = 750
@@ -37,6 +48,12 @@ def image_descriptors(char * file):
 
  
 def folder_descriptors(char * folder):
+    """
+        folder_descriptors(char * folder)
+
+        Create descriptors of each file of the folder (see image_descriptors function).
+        Keep 1% descriptors of each file, choose randomly.
+    """
     print(folder)
     files = glob.glob(folder + "/*g01*.txt")
 
@@ -53,10 +70,20 @@ def folder_descriptors(char * folder):
     return all_random_feature
 
 def likelihood_moment(x, ytk, moment):
+    """
+        likelihood_moment(x, ytk, moment)
+
+        Calculating x to the moment (power), multiply by the probability ytk.      
+    """
     x_moment = np.power(np.float32(x), moment) if moment > 0 else np.float32([1])
     return x_moment * ytk
 
 def likelihood_statistics(samples, means, covs, weights):
+    """
+        likelihood_statistics(samples, means, covs, weights)
+
+        Calculing the statistics of likelihood
+    """
     gaussians, s0, s1,s2 = {}, {}, {}, {}
     samples = zip(range(0, len(samples)), samples)
     
@@ -78,19 +105,44 @@ def likelihood_statistics(samples, means, covs, weights):
     return s0, s1, s2
 
 def fisher_vector_weights(s0, s1, s2, means, covs, w, T):
+    """
+        fisher_vector_weights(s0, s1, s2, means, covs, w, T)
+
+        Return float's list of fisher vector weights.
+    """
     return np.float32([((s0[k] - T * w[k]) / np.sqrt(w[k]) ) for k in range(0, len(w))])
 
 def fisher_vector_means(s0, s1, s2, means, sigma, w, T):
+    """
+        fisher_vector_means(s0, s1, s2, means, sigma, w, T)
+
+        Return float's list of fisher vector means.
+    """
     return np.float32([(s1[k] - means[k] * s0[k]) / (np.sqrt(w[k] * sigma[k])) for k in range(0, len(w))])
 
 def fisher_vector_sigma(s0, s1, s2, means, sigma, w, T):
+    """
+        fisher_vector_sigma(s0, s1, s2, means, sigma, w, T)
+
+        Return float's list of fisher vector sigma.
+    """
     return np.float32([(s2[k] - 2 * means[k]*s1[k]  + (means[k]*means[k] - sigma[k]) * s0[k]) / (np.sqrt(2*w[k])*sigma[k])  for k in range(0, len(w))])
 
 def normalize(fisher_vector):
+    """
+        normalize(fisher_vector)
+
+        Normalize the list of float int fisher_vector 
+    """
     v = np.sqrt(abs(fisher_vector)) * np.sign(fisher_vector)
     return v / np.sqrt(np.dot(v, v))
 
 def fisher_vector(samples,file_name, group, means, covs, w):
+    """
+        fisher_vector(samples,file_name, group, means, covs, w)
+
+        Calculate and return the fisher vector
+    """
     group.append(int(file_name[-10:-8]))#group divide
         
     s0, s1, s2 =  likelihood_statistics(samples, means, covs, w)
@@ -104,6 +156,12 @@ def fisher_vector(samples,file_name, group, means, covs, w):
     return fv
 
 def getWords(char * input_folder, int nbThread):
+    """
+        getWords(char * input_folder, int nbThread)
+
+        Return the list of descriptors in the sub-folders of input_folder.
+        Using OpenMP to parallelize with nbThread threads.
+    """
     words = []
     folders = glob.glob(input_folder + '/*')
     cdef int size = len(folders)
@@ -114,9 +172,14 @@ def getWords(char * input_folder, int nbThread):
                 words.append(folder_descriptors(folders[i]))
     return words
 
-
-
 def generate_gmm(char * input_folder, int N, int nbThread):
+    """
+        generate_gmm(char * input_folder, int N, int nbThread)
+
+        Creation of GMM (Gaussian Mixture Model) with informations in sub-folders of folder.
+        Utilization of N Gaussians.
+        nbThread used in getWords function.
+    """
     words = np.concatenate(getWords(input_folder, nbThread)) 
     
     print("Training GMM of size", N)         
@@ -141,10 +204,21 @@ def generate_gmm(char * input_folder, int N, int nbThread):
     return means, covs, weights
 
 def get_fisher_vectors_from_folder(char * folder, gmm, group):
+    """
+        get_fisher_vectors_from_folder(char * folder, gmm, group)
+
+        Return the list of fisher vectors created by the files in the folder
+    """
     files = glob.glob(folder + "/*g01*.txt")
     return np.float32([fisher_vector(image_descriptors(file), file, group, *gmm) for file in files])
 
-def getFeatures(char * folder, int nbThread, group, gmm):
+def fisher_features(char * folder, int nbThread, group, gmm):
+    """
+        fisher_features(char * folder, int nbThread, group, gmm)
+
+        Creation of the dictionary of features by folder.
+        Using OpenMP to parallelize with nbThread threads.
+    """
     features = {}
     folders = glob.glob(folder + "/*")
     cdef int size = len(folders)
@@ -155,16 +229,15 @@ def getFeatures(char * folder, int nbThread, group, gmm):
                 features[folders[i]] = get_fisher_vectors_from_folder(folders[i], gmm, group)
     return features
 
-def fisher_features(char * folder, int nbThread, group, gmm):
-
-    features = getFeatures(folder, nbThread, group, gmm)
-    return features
-
 def train(train,group):
+    """
+        train(train,group)
+
+        Training of the classification
+    """
     X = np.concatenate(train.values())
     Y = np.concatenate([np.float32([i]*len(v)) for i,v in zip(range(0, len(train)), train.values())])
     Y_sum = np.zeros([len(Y)])
-    print("tchoutchou")
     for g_number in len(25):
         X_train = np.zeros([1,len(X[0])]) 
         X_test = np.zeros([1,len(X[0])]) 
@@ -191,10 +264,24 @@ def train(train,group):
     return res
   
 def load_gmm(char * folder = ""):
+    """
+       load_gmm(char * folder = "")
+
+       Load a preexisting gmm saved in folder.
+       Need of files  "means.gmm.npy", "covs.gmm.npy" and "weights.gmm.npy"
+    """
     files = ["means.gmm.npy", "covs.gmm.npy", "weights.gmm.npy"]
     return map(lambda file: np.load(file), map(lambda s : folder + "/" + s , files))
 
 def get_args():
+    """
+        get_args()
+
+        Analyze argumentsgive as parameter in main() call.
+        -g is to load a preexisting GMM dictionary
+        -nX where X is the number of words in dictionnary
+        -tX where X is the number of thread for parallelization
+    """
     parser = argparse.ArgumentParser()
     parser.add_argument("-g" , "--loadgmm" , help="Load Gmm dictionary", action = 'store_true', default = False)
     parser.add_argument('-n' , "--number", help="Number of words in dictionary" , default=10, type=int)
@@ -204,6 +291,11 @@ def get_args():
   
 #Main
 def main():
+    """
+        main()
+
+        main function for calculating fisher vectors.
+    """
     cdef float start = time.time()
 
     args = get_args()
