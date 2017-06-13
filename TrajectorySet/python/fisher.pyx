@@ -1,5 +1,13 @@
-#Author: Jacob Gildenblat, 2014
-#License: you may use this for whatever you like 
+""" 
+    @author: Jacob Gildenblat, 2014
+    License: you may use this for whatever you like 
+
+    Contributors :
+        松井 賢司 2015-2017
+        Gwladys Auffret 2017
+"""
+
+
 import sys, glob, argparse
 import matplotlib.pyplot as plt
 import numpy as np
@@ -228,6 +236,7 @@ def fisher_features(char * folder, int nbThread, group, gmm):
     with  nogil,parallel(num_threads=nbThread):
         for i in prange(size, schedule='static' ):
             with gil:
+                print(folders[i])
                 features[folders[i]] = get_fisher_vectors_from_folder(folders[i], gmm, group)
     return features
 
