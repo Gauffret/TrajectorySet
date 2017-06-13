@@ -16,6 +16,7 @@ import os
 import cython
 from cython.parallel import parallel,prange
 cimport numpy as np
+from cpython cimport bool
 
 
 def dictionary(descriptors, int N):
@@ -40,7 +41,7 @@ def image_descriptors(char * file):
 
         Return descriptors of the given file.
     """
-    print(file)
+    #print(file)
     descriptors = np.fromfile(file, dtype='f4')
     descriptors = descriptors.reshape((-1,750)) #3*3=9 9*30=270 / sizeOfLine = 750
 
@@ -180,6 +181,7 @@ def generate_gmm(char * input_folder, int N, int nbThread):
         Utilization of N Gaussians.
         nbThread used in getWords function.
     """
+    print("generate gmm")
     words = np.concatenate(getWords(input_folder, nbThread)) 
     
     print("Training GMM of size", N)         
@@ -270,39 +272,26 @@ def load_gmm(char * folder = ""):
        Load a preexisting gmm saved in folder.
        Need of files  "means.gmm.npy", "covs.gmm.npy" and "weights.gmm.npy"
     """
-    files = ["means.gmm.npy", "covs.gmm.npy", "weights.gmm.npy"]
+    print("load pre-existing gmm")
+    files = ["Tmeans.gmm.npy", "Tcovs.gmm.npy", "Tweights.gmm.npy"]
     return map(lambda file: np.load(file), map(lambda s : folder + "/" + s , files))
 
-def get_args():
-    """
-        get_args()
-
-        Analyze argumentsgive as parameter in main() call.
-        -g is to load a preexisting GMM dictionary
-        -nX where X is the number of words in dictionnary
-        -tX where X is the number of thread for parallelization
-    """
-    parser = argparse.ArgumentParser()
-    parser.add_argument("-g" , "--loadgmm" , help="Load Gmm dictionary", action = 'store_true', default = False)
-    parser.add_argument('-n' , "--number", help="Number of words in dictionary" , default=10, type=int)
-    parser.add_argument('-t' , "--nbThread", help="Number of thread in parallelization" , default=15, type=int)
-    args = parser.parse_args()
-    return args
-  
 #Main
-def main():
+def main(bool loadgmm=False, int number = 10, int nbThread = 15):
     """
-        main()
+        main(bool loadgmm=False, int number = 10, int nbThread = 15)
 
-        main function for calculating fisher vectors.
+        Main function for calculating fisher vectors.
+        The boolean loadgmm load a preexisting GMM dictionary when true, else it is created
+        The integer number is the number of words in GMM dictionnary
+        The integer nbThread is the number of thread for parallelization
     """
     cdef float start = time.time()
 
-    args = get_args()
     cdef char * path = '../result'
     cdef char * gmm_path ='/media/gwladys/36A831ACA8316C0D/result'
 
-    gmm = load_gmm(path) if args.loadgmm else generate_gmm(gmm_path, args.number, args.nbThread)
+    gmm = load_gmm(path) if loadgmm else generate_gmm(gmm_path, number, nbThread)
 
 
     cdef float elapsed_time = time.time() - start
@@ -310,7 +299,7 @@ def main():
 
     group = []
 
-    fisher_feature = fisher_features(gmm_path, args.nbThread, group, gmm)
+    fisher_feature = fisher_features(gmm_path, nbThread, group, gmm)
     #
     elapsed_time = time.time() - start
     print ("elapsed_time_fisher:{0}".format(elapsed_time)) + "[sec]"
