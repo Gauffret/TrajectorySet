@@ -14,6 +14,15 @@ import glob
 
 
 def plotFile(file, resultFolder="") :
+	"""
+		plotFile(file, resultFolder="")
+
+		Plot the mouvements describes in the file given as parameter and save
+		the pictures as pdf.
+		The pictures can be saved in resultFolder if you don't want it in the
+		current folder.
+		Here it's modified to plot only 10 mouvements.
+	"""
 
 	means = np.fromfile(file,dtype ="f4")
 	means = means.reshape((-1,750))
@@ -26,9 +35,9 @@ def plotFile(file, resultFolder="") :
 	    Cx=[]
 	    Cy=[]
 	    
-	    for m in range(0,375):
-	        Cx.append(means[l,m*2])
-	        Cy.append(means[l,m*2+1])
+	    for m in range(0,750,2):
+	        Cx.append(means[l,m])
+	        Cy.append(means[l,m+1])
 	    n = 0
 	    for i in range(0,5):#y
 	        for j in range(0,5):#X
@@ -49,7 +58,15 @@ def plotFile(file, resultFolder="") :
 
 
 
-def plot(inputFolder="/media/gwladys/36A831ACA8316C0D/result") : 
+def plot(inputFolder="") :
+	"""
+		plot(inputFolder="")
+
+		To plot all the mouvements describes in files saved in sub-folders of
+		inputFolder.
+		Create folders in result/plot folders to saved pictures.
+		Here it's modified to take only one video descriptors of each category.
+	"""
 	folders = glob.glob(inputFolder + '/*')
 	for folder in folders :
 		folderName = folder.split("/")[5]
@@ -62,4 +79,6 @@ def plot(inputFolder="/media/gwladys/36A831ACA8316C0D/result") :
 		os.mkdir(resultFolder)
 		plotFile(files[0], resultFolder)
 
-plot()
+
+#Main
+plot("/media/gwladys/36A831ACA8316C0D/result")
