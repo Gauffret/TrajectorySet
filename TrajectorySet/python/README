@@ -5,21 +5,15 @@ The file exe.py will extract informations from videos .avi and store it in a fil
 Put line 19 the path from your video's folder.
 Put line 31&32 the path of where you want to store the .txt files.
 
+To create gmm and fisher vectors, you need the fisher.so.
+Use files fisher.pyx and setup.py.
+Here the command line to create the library (Also create fisher.c): 
 
-The file gmm_only.py apply the Gaussian Mixture Model on the files .txt.
-It creates 3 gmm.npy files (means, covs and weights) in the result folder.
-The variable path contains the path of previous gmm classification.
-The variable gmm_path contains the path of the gmm classification you will made.
-Call with option -g, this python programm will use the previous classification.
-Call with option -n X, it will classified videos in X differents categories.
+python setup.py build_ext --inplace
 
+Once you have the library, you can use fisherVector.py to create gmm (optionnal)
+and fisher vectors from the files obtained after the extraction.
 
-The file fisher_2.py use the same algorithm as gmm_only.py at the beginning.
-Then it applies the fisher vectors on the files .txt.
-
-
-The file plot_gmm.py show and save the point calculated in the file means.gmm.npy
-created by gmm_only.py or fisher_2.py when you don't use the option -g.
-
-
-The file 20161114_50class.py needs the files .pickle created by fischer_2.py
+fisherVector.py create 2 files you need for classification.py.
+As it using the technique of Leaving One Group Out, the group are created since
+the G-number in videos name.
