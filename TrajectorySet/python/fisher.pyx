@@ -51,7 +51,7 @@ def image_descriptors(char * file):
 
         Return descriptors of the given file.
     """
-    #print(file)
+    print(file)
     descriptors = np.fromfile(file, dtype='f4')
     descriptors = descriptors.reshape((-1,750)) #3*3=9 9*30=270 / sizeOfLine = 750
 
@@ -148,13 +148,12 @@ def normalize(fisher_vector):
     v = np.sqrt(abs(fisher_vector)) * np.sign(fisher_vector)
     return v / np.sqrt(np.dot(v, v))
 
-def fisher_vector(samples,file_name, group, means, covs, w):
+def fisher_vector(samples,file_name, means, covs, w):
     """
-        fisher_vector(samples,file_name, group, means, covs, w)
+        fisher_vector(samples,file_name, means, covs, w)
 
         Calculate and return the fisher vector
     """
-    group.append(int(file_name[-10:-8]))#group divide
         
     s0, s1, s2 =  likelihood_statistics(samples, means, covs, w)
     T = samples.shape[0]
@@ -178,12 +177,12 @@ def getWords(char * input_folder, int nbThread):
     cdef int size = len(folders)
     cdef int i
     with  nogil,parallel(num_threads=nbThread):
-        for i in prange(size, schedule='static' ):
+        for i in prange(size, schedule='dynamic' ):
             with gil:
                 words.append(folder_descriptors(folders[i]))
     return words
 
-def generate_gmm(char * input_folder, int N, int nbThread):
+def generate_gmm(char * input_folder, char * result_folder, int N, int nbThread):
     """
         generate_gmm(char * input_folder, int N, int nbThread)
 
@@ -210,14 +209,14 @@ def generate_gmm(char * input_folder, int N, int nbThread):
              zis = [j for j, x in enumerate(diag) if x == diag_s[0]]
              for zi in zis:
                  covs[i,zi,zi] = 0.00001
-    np.save("../result/means.gmm", means)
-    np.save("../result/covs.gmm", covs)
-    np.save("../result/weights.gmm", weights)
+    np.save(result_folder+"/means.gmm", means)
+    np.save(result_folder+"/covs.gmm", covs)
+    np.save(result_folder+"/weights.gmm", weights)
     return means, covs, weights
 
-def get_fisher_vectors_from_folder(char * folder, int nbThread, gmm, group):
+def get_fisher_vectors_from_folder(char * folder, int nbThread, gmm):
     """
-        get_fisher_vectors_from_folder(char * folder, gmm, group)
+        get_fisher_vectors_from_folder(char * folder, gmm)
 
         Return the list of fisher vectors created by the files in the folder
     """
@@ -227,18 +226,18 @@ def get_fisher_vectors_from_folder(char * folder, int nbThread, gmm, group):
     cdef int i
     if size > nbThread :
         with  nogil,parallel(num_threads=nbThread):
-            for i in prange(size, schedule='static' ):
+            for i in prange(size, schedule='dynamic' ):
                 with gil:
-                    fv.append(fisher_vector(image_descriptors(files[i]), files[i], group, *gmm))
+                    fv.append(fisher_vector(image_descriptors(files[i]), files[i], *gmm))
     else :
         for file in files :
-            fv.append(fisher_vector(image_descriptors(file), file, group, *gmm))
+            fv.append(fisher_vector(image_descriptors(file), file, *gmm))
 
     return np.float32(fv)
 
-def fisher_features(char * folder, int nbThread, group, gmm):
+def fisher_features(char * folder, int nbThread, gmm):
     """
-        fisher_features(char * folder, int nbThread, group, gmm)
+        fisher_features(char * folder, int nbThread, gmm)
 
         Creation of the dictionary of features by folder.
         Using OpenMP to parallelize with nbThread threads.
@@ -249,16 +248,15 @@ def fisher_features(char * folder, int nbThread, group, gmm):
     cdef int i
     if size > nbThread :
         with  nogil,parallel(num_threads=nbThread):
-            for i in prange(size, schedule='static' ):
+            for i in prange(size, schedule='dynamic' ):
                 with gil:
                     print(folders[i][lenPath:])
-                    features[folders[i][lenPath:]] = get_fisher_vectors_from_folder(folders[i], nbThread, gmm, group)
+                    features[folders[i][lenPath:]] = get_fisher_vectors_from_folder(folders[i], nbThread, gmm)
     else :
         for j in xrange(size) :
             print(folders[j][lenPath:])
-            features[folders[j][lenPath:]] = get_fisher_vectors_from_folder(folders[j], nbThread, gmm, group)
-    print(group)
-    return features, group
+            features[folders[j][lenPath:]] = get_fisher_vectors_from_folder(folders[j], nbThread, gmm)
+    return features
 
 def train(train,group):
     """
@@ -305,3 +303,18 @@ def load_gmm(char * folder = ""):
     files = ["means.gmm.npy", "covs.gmm.npy", "weights.gmm.npy"]
     return map(lambda file: np.load(file), map(lambda s : folder + "/" + s , files))
 
+def get_group(char * folder):
+    """ 
+        get_group(char * folder)
+
+        Created a list with the group number of the files for the classification
+    """
+
+    grp = []
+    folders = glob.glob(folder+'/*')
+    for f in folders:
+        files = glob.glob(f+'/*.txt')
+        for name in files:
+            grp.append(int(name[-10:-8]))
+
+    return grp

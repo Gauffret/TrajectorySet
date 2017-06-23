@@ -9,7 +9,7 @@ import time
 import pickle
 import os
 
-def main(loadgmm=False, number = 64, nbThread = 5):
+def main(loadgmm, number, nbThread):
     """
         main(bool loadgmm=False, int number = 10, int nbThread = 15)
 
@@ -21,25 +21,27 @@ def main(loadgmm=False, number = 64, nbThread = 5):
     start = time.time()
     path = '../result'
     gmm_path ='/media/gwladys/36A831ACA8316C0D/result'
+    output_path = '../result'
 
     #GMM
-    gmm = fisher.load_gmm(path) if loadgmm else fisher.generate_gmm(gmm_path, number, nbThread)
+    gmm = fisher.load_gmm(path) if loadgmm else fisher.generate_gmm(gmm_path,output_path, number, nbThread)
 
 
     elapsed_time = time.time() - start
     print ("elapsed_time_gmm:{0}".format(elapsed_time)) + "[sec]"
 
     # Fisher Vectors
-    group = []
+    
 
-    fisher_feature,group = fisher.fisher_features(gmm_path, nbThread, group, gmm)
-    print(group)
+    fisher_feature = fisher.fisher_features(gmm_path, nbThread, gmm)
     elapsed_time = time.time() - start
     print ("elapsed_time_fisher:{0}".format(elapsed_time)) + "[sec]"
 
     with open('../result/10fisher_dict.pickle','wb') as f:
         pickle.dump(fisher_feature,f)
+
+    group = fisher.get_group(gmm_path)
     with open('../result/10fisher_group.txt','wb') as f:
         f.write("\n".join(map(lambda x: str(x), group)) + "\n")
 
-main(True,64,10)
+main(True,64,20)
