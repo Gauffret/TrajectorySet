@@ -51,7 +51,7 @@ def image_descriptors(char * file):
 
         Return descriptors of the given file.
     """
-    print(file)
+    #print(file)
     descriptors = np.fromfile(file, dtype='f4')
     descriptors = descriptors.reshape((-1,750)) #3*3=9 9*30=270 / sizeOfLine = 750
 
@@ -161,8 +161,11 @@ def fisher_vector(samples,file_name, means, covs, w):
     a = fisher_vector_weights(s0, s1, s2, means, covs, w, T)
     b = fisher_vector_means(s0, s1, s2, means, covs, w, T)
     c = fisher_vector_sigma(s0, s1, s2, means, covs, w, T)
-    fv = np.concatenate([np.concatenate(a), np.concatenate(b), np.concatenate(c)])
-    fv = normalize(fv)
+    try :
+        fv = np.concatenate([np.concatenate(a), np.concatenate(b), np.concatenate(c)])
+        fv = normalize(fv)
+    except ValueError:
+        print(file_name+" is incorrect !")
     return fv
 
 def getWords(char * input_folder, int nbThread):
