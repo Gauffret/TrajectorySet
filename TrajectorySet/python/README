@@ -5,15 +5,22 @@ The file exe.py will extract informations from videos .avi and store it in a fil
 Put line 19 the path from your video's folder.
 Put line 31&32 the path of where you want to store the .txt files.
 
-To create gmm and fisher vectors, you need the fisher.so.
+
+To create gmm and fisher vectors, you need the fisher.so file.
 Use files fisher.pyx and setup.py.
 Here the command line to create the library (Also create fisher.c): 
 
 python setup.py build_ext --inplace
 
+
+
 Once you have the library, you can use fisherVector.py to create gmm (optionnal)
 and fisher vectors from the files obtained after the extraction.
+The variable path line 22 is where the created files ares saved; 
+gmm_path line 23 is where you put your .txt files, descriptors of videos.
 
-fisherVector.py create 2 files you need for classification.py.
+fisherVector.py create 2 files you need for classification.py :
+fisher_dict.pickle is the disctionnary of fisher vectors for each action's classes ;
+fisher_group.txt divide the files in group.
 As it using the technique of Leaving One Group Out, the group are created since
-the G-number in videos name.
+the G-number in videos name as in UCF50 and UCF101 (example of name : 'v_Lunges_g01_c01')
