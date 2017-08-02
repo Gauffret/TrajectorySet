@@ -44,7 +44,6 @@ with open('../result/HMDB51/TrainTestSets.pickle', 'r') as f:
 
 
 
-
 from sklearn.svm import SVC, LinearSVC
 
 
