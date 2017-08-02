@@ -19,8 +19,8 @@ def main(loadgmm, number, nbThread):
         The integer nbThread is the number of thread for parallelization
     """
     start = time.time()
-    path = '../result/101'
-    gmm_path ='/media/gwladys/1DD3E28B3E6EB2D5/UCF101'
+    path = '../result/HMDB51'
+    gmm_path ='/media/gwladys/1DD3E28B3E6EB2D5/HMDB51'
 
     #GMM
     gmm = fisher.load_gmm(path) if loadgmm else fisher.generate_gmm(gmm_path, path, number, nbThread)
@@ -36,11 +36,11 @@ def main(loadgmm, number, nbThread):
     elapsed_time = time.time() - start
     print ("elapsed_time_fisher:{0}".format(elapsed_time)) + "[sec]"
 
-    with open('../result/101/fisher_dict.pickle','wb') as f:
+    with open('../result/HMDB51/fisher_dict.pickle','wb') as f:
         pickle.dump(fisher_feature,f)
 
     group = fisher.get_group(gmm_path)
-    with open('../result/101/fisher_group.txt','wb') as f:
+    with open('../result/HMDB51/fisher_group.txt','wb') as f:
         f.write("\n".join(map(lambda x: str(x), group)) + "\n")
 
 main(True,64,10)

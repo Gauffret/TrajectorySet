@@ -318,6 +318,7 @@ def get_group(char * folder):
     for f in folders:
         files = glob.glob(f+'/*.txt')
         for name in files:
+            print name
             grp.append(int(name[-10:-8]))
 
     return grp
