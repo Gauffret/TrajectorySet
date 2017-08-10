@@ -306,19 +306,3 @@ def load_gmm(char * folder = ""):
     files = ["means.gmm.npy", "covs.gmm.npy", "weights.gmm.npy"]
     return map(lambda file: np.load(file), map(lambda s : folder + "/" + s , files))
 
-def get_group(char * folder):
-    """ 
-        get_group(char * folder)
-
-        Created a list with the group number of the files for the classification
-    """
-
-    grp = []
-    folders = glob.glob(folder+'/*')
-    for f in folders:
-        files = glob.glob(f+'/*.txt')
-        for name in files:
-            print name
-            grp.append(int(name[-10:-8]))
-
-    return grp

@@ -4,6 +4,7 @@ The file exe.py will extract informations from videos .avi and store it in a fil
 .txt. As they are heavy, use a disk with a lot of free space.
 Put line 19 the path from your video's folder.
 Put line 31&32 the path of where you want to store the .txt files.
+/!\ You nned to compile DenseTrackStab.cpp first !
 
 
 To create gmm and fisher vectors, you need the fisher.so file.
@@ -19,8 +20,16 @@ and fisher vectors from the files obtained after the extraction.
 The variable path line 22 is where the created files ares saved; 
 gmm_path line 23 is where you put your .txt files, descriptors of videos.
 
-fisherVector.py create 2 files you need for classification.py :
-fisher_dict.pickle is the disctionnary of fisher vectors for each action's classes ;
-fisher_group.txt divide the files in group.
-As it using the technique of Leaving One Group Out, the group are created since
-the G-number in videos name as in UCF50 and UCF101 (example of name : 'v_Lunges_g01_c01')
+fisherVector.py creates fisher_dict.pickle, the disctionnary of fisher vectors for each action's classes, you need for classification. 
+
+Depending on your dataset, you can use classificationUCF.py or classificationHMDB.py.
+You can use the first onr for both UCF50 ans UCF101 : the second part split 3 times UCF101 dataset in train/test sets, as recommended on crcv.ucf.edu/data/UCF101.php
+You can also used the Leave-One-Goup-Out method, as recommanded for UCF50.
+
+
+If you are using HMDB51 datasets, listHMDB.py creates a dictionnary where each video is associated with a list of numbers.
+This numbers indicates if this video is in training, testing or no sets for the different split recommanding on serre-lab.clps.brown.edu/resource/hmdn-a-large-human-motion-database/
+The dictionnary is used in classificationHMDB.py
+
+
+plot.py is for plotting the trajectory in blocks.

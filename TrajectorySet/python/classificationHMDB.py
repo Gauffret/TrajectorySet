@@ -7,8 +7,9 @@ Created on Tue Nov  8 14:24:22 2016
 import pickle
 import numpy as np
 import random as r
+import glob
 from sklearn import preprocessing
-"""
+
 with open('../result/HMDB51/fisher_dict.pickle', 'r') as f:
     A = pickle.load(f)#train test reverse
 
@@ -38,10 +39,9 @@ np.save("../result/HMDB51/y2_class.npy", y)
 
 X = np.load("../result/HMDB51/X_class.npy")
 y = np.load("../result/HMDB51/y_class.npy")
-
+"""
 with open('../result/HMDB51/TrainTestSets.pickle', 'r') as f:
     dict = pickle.load(f)
-
 
 
 from sklearn.svm import SVC, LinearSVC
@@ -64,10 +64,12 @@ for i in range(3):
     for f in A:
         files = glob.glob('/media/gwladys/1DD3E28B3E6EB2D5/HMDB51/'+f+'/*.txt')
         for name in files:
-            if (dict[name][i]==1):
-                train_index.append(i)
-            else if (dict[name][i]==2):
-                test_index.append(i)
+            name = name.split("/")[6]
+            if (dict[name][i]=='1'):
+                train_index.append(index)
+            else  :
+                if (dict[name][i]=='2'):
+                    test_index.append(index)
             index = index +1
 
     X_train, X_test = X[train_index], X[test_index]
